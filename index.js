@@ -1,43 +1,42 @@
-"use strict";
+// Hey! Check out my super indepth blog post about what possessed me to make
+// FizzBuzz this complicated! https://jonlaing.github.io/2017/11/07/over-engineered-fizz-buzz.html 
+'use strict';
 
-// A fizzer/num monad is essentially an Either monad, with `fizzer` being the
-// `left` and `num` being the right.
+// some convenience functions for readability
+const when = (pred, f) => (n, text) => pred(n) ? f(text) : text;
 
-const fizzer = test => s => v => ({
-    fizzer: f => fizzer(test)(f(s, v))(v),
-    num: () => fizzer(test)(s)(v),
-    lift: () => s,
-    concat: m => m
-        .fizzer((s2, v2) =>
-            v2 % test === 0 ?
-                s2 + s :
-                s2)
-        .num(n =>
-            n % test === 0 ?
-                fizzer(test)(s)(n) :
-                num(n))
+const isMultiple = x => y => y % x === 0;
+
+const concatString = s1 => s0 => s0 + s1;
+
+const range = (min, max) =>
+  Array.from(Array(max - min + 1).keys(), x => x + min);
+
+// implementing the Functor
+const Fizzer = (n, text) => ({
+  map: f => Fizzer(n, f(n, text || '')),
+  done: () => text && text.length > 0 ? text : n // get out of the functor
 });
 
-const num = v => ({
-    fizzer: () => num(v),
-    num: f => f(v), // flatten for these purposes
-    lift: () => v,
-    concat: () => num(v)
-});
+const fizzIt = n =>
+  Fizzer(n)
+    .map(when(isMultiple(3), concatString("Fizz")))
+    .map(when(isMultiple(5), concatString("Buzz")))
+    .done();
 
+const fizzBuzz = (min, max) =>
+  range(min, max)
+    .map(fizzIt)
+    .map(x => console.log(x));
 
-const fizz = fizzer(3)("Fizz");
-const buzz = fizzer(5)("Buzz");
-const baz = fizzer(7)("Baz");
+fizzBuzz(1, 100);
 
-const fizzbuzz = max =>
-    Array.from(Array(max).keys(), x => x + 1)
-        .map(num)
-        .map(e => fizz(0).concat(e))
-        .map(e => buzz(0).concat(e))
-        .map(e => baz(0).concat(e))
-        .map(e => e.lift());
-
-const max = parseInt(process.argv[2])
-
-console.log(fizzbuzz(max));
+module.exports = {
+    when,
+    isMultiple,
+    concatString,
+    range,
+    Fizzer,
+    fizzIt,
+    fizzBuzz
+};
