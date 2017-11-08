@@ -29,8 +29,6 @@ const fizzBuzz = (min, max) =>
     .map(fizzIt)
     .map(x => console.log(x));
 
-fizzBuzz(1, 100);
-
 module.exports = {
     when,
     isMultiple,
